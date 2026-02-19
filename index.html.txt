@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>School Chat</title>
+  <style>
+    body { font-family: Arial; text-align: center; background: #222; color: white; }
+    input, button { padding: 10px; margin: 5px; }
+    #messages { margin-top: 20px; max-width: 600px; margin-left:auto;margin-right:auto;text-align:left;}
+    .message { border-bottom:1px solid #444; padding:5px;}
+  </style>
+</head>
+<body>
+
+<h2>School Chat</h2>
+
+<input id="roomLink" placeholder="Room link/code"><br>
+<input id="classInput" placeholder="Class"><br>
+<input id="nameInput" placeholder="Your Name"><br>
+<input id="msgInput" placeholder="Message">
+<button onclick="sendMessage()">Send</button>
+
+<div id="messages"></div>
+
+<script>
+let currentRoom = "";
+
+function sendMessage() {
+  const roomLink = roomLinkInput.value.trim();
+  const name = nameInput.value.trim();
+  const className = classInput.value.trim();
+  const text = msgInput.value.trim();
+  if(!roomLink || !name || !className || !text) return;
+
+  currentRoom = roomLink;
+
+  fetch("/api/message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ roomLink, name, className, text })
+  }).then(() => {
+    msgInput.value = "";
+    loadMessages();
+  });
+}
+
+function loadMessages() {
+  if(!currentRoom) return;
+  fetch(`/api/message?roomLink=${encodeURIComponent(currentRoom)}`)
+    .then(res => res.json())
+    .then(data => {
+      const chat = document.getElementById("messages");
+      chat.innerHTML = "";
+      data.forEach(m => {
+        chat.innerHTML += `<div class="message">[${m.className}] <b>${m.name}</b>: ${m.text}</div>`;
+      });
+      chat.scrollTop = chat.scrollHeight;
+    });
+}
+
+// Auto-refresh every 2 seconds
+setInterval(loadMessages, 2000);
+</script>
+
+</body>
+</html>
